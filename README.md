@@ -18,7 +18,7 @@ a [`datastar`](https://github.com/godaddy/datastar) API
 const Dynastar = require('dynastar');
 const Joi = require('joi');
 
-functon defineMyModel(dynamo) {
+function defineMyModel(dynamo) {
 
   const model = dynamo.define('mymodel', {
     hashKey: 'hashme',

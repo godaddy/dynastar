@@ -1,4 +1,5 @@
 # dynastar
+[![Build Status](https://travis-ci.com/godaddy/dynastar.svg?branch=master)](https://travis-ci.com/godaddy/dynastar)
 
 A simple compatibility layer for dynamodb models to be compatible with the datastar model API
 

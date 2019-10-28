@@ -29,7 +29,7 @@ function defineMyModel(dynamo) {
     }
   });
 
-  return new Dynastar({ model, hashKey: 'hashme, rangeKey: 'ranger' });
+  return new Dynastar({ model, hashKey: 'hashme', rangeKey: 'ranger' });
 }
 
 const mymodel = defineMyModel(require('dynamodb'));

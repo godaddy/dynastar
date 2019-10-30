@@ -13,7 +13,8 @@ npm install dynastar --save
 
 When defining your [`dynamodb`](https://github.com/baseprime/dynamodb) models,
 you use `dynastar` to expose them with
-a [`datastar`](https://github.com/godaddy/datastar) API
+a [`datastar`](https://github.com/godaddy/datastar) API. You can optionally pass 
+functions you would like to attach to the Dynastar class.
 
 ```js
 const Dynastar = require('dynastar');
@@ -30,7 +31,15 @@ function defineMyModel(dynamo) {
     }
   });
 
-  return new Dynastar({ model, hashKey: 'hashme', rangeKey: 'ranger' });
+  function exampleFunction1(){
+    // do something
+  } 
+
+  function exampleFunction2(){
+    // do something
+  } 
+
+  return new Dynastar({ model, hashKey: 'hashme', rangeKey: 'ranger', exampleFunction1, exampleFunction2 });
 }
 
 const mymodel = defineMyModel(require('dynamodb'));

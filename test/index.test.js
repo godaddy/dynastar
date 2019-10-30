@@ -7,7 +7,9 @@ const AwsLiveness = require('aws-liveness');
 const sinon = require('sinon');
 const Joi = require('joi');
 const uuid = require('uuid');
-const Compat = require('..');
+const Dynastar = require('..');
+const AwaitWrap = Dynastar.AwaitWrap;
+
 
 assume.use(require('assume-sinon'));
 
@@ -21,7 +23,7 @@ const dynamoDriver = new DynamoDB({ endpoint, region });
 const liveness = new AwsLiveness();
 dynamo.dynamoDriver(dynamoDriver);
 
-describe('Compat - index.js', function () {
+describe('Dynastar - index.js', function () {
   this.timeout(6E4);
   let wrapped;
   const id = uuid.v1();
@@ -38,7 +40,7 @@ describe('Compat - index.js', function () {
   });
 
   before(function (done) {
-    wrapped = new Compat({ model, hashKey, rangeKey });
+    wrapped = new Dynastar({ model, hashKey, rangeKey });
     liveness.waitForServices({
       clients: [dynamoDriver],
       waitSeconds: 60
@@ -132,5 +134,35 @@ describe('Compat - index.js', function () {
       });
     });
   });
-});
+  describe('hoistable functions', function () {
+    it('should work with defined hoistable function', function (done) {
+      function modify(obj) {
+        obj.anotherKey = 'what';
+        return obj;
+      }
 
+      const wmodel = new Dynastar({ model, hashKey, rangeKey, modify });
+      assume(wmodel.modify).is.a('function');
+      wmodel.findAll()
+        .on('data', function (data) {
+          const modified = wmodel.modify(data);
+          assume(modified.anotherKey).equals('what');
+        })
+        .on('error', done)
+        .on('end', done);
+    });
+
+    it('should hoist function with AwaitWrap and make them awaitable', async function () {
+      function somethingAsync(data, done) {
+        data.somethingAsync = true;
+        return void setImmediate(done, null, data);
+      }
+      const wmodel = new AwaitWrap(new Dynastar({ model, hashKey, rangeKey, somethingAsync }));
+      const results = await wmodel.findAll({ hello: 'there' });
+      for (const res of results) {
+        const modified = await wmodel.somethingAsync(res);
+        assume(modified.somethingAsync).is.true();
+      }
+    });
+  });
+});

@@ -10,7 +10,6 @@ const uuid = require('uuid');
 const Dynastar = require('..');
 const AwaitWrap = Dynastar.AwaitWrap;
 
-
 assume.use(require('assume-sinon'));
 
 const region = 'us-east-1';

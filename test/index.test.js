@@ -133,6 +133,7 @@ describe('Dynastar - index.js', function () {
       });
     });
   });
+
   describe('hoistable functions', function () {
     it('should work with defined hoistable function', function (done) {
       function modify(obj) {

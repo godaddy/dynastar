@@ -13,7 +13,7 @@ npm install dynastar --save
 
 When defining your [`dynamodb`](https://github.com/baseprime/dynamodb) models,
 you use `dynastar` to expose them with
-a [`datastar`](https://github.com/godaddy/datastar) API. You can optionally pass 
+a [`datastar`](https://github.com/godaddy/datastar) API. You can optionally pass
 functions you would like to attach to the Dynastar class.
 
 ```js
@@ -30,19 +30,45 @@ function defineMyModel(dynamo) {
       ranger: dynamo.types.timeUUID()
     }
   });
+  //
+  // A sync function must have a length of less than 2 if you are to be able
+  // to use the AwaitWrap wrapper
+  //
+  function exampleSyncFn() {
+    // do something sync
+    return someSyncResult;
+  }
 
-  function exampleFunction1(){
-    // do something
-  } 
+  function exampleAsyncFn(data, next) {
+    // do something async
+    next(null, someAsyncResult);
+  }
 
-  function exampleFunction2(){
-    // do something
-  } 
-
-  return new Dynastar({ model, hashKey: 'hashme', rangeKey: 'ranger', exampleFunction1, exampleFunction2 });
+  return new Dynastar({ model, hashKey: 'hashme', rangeKey: 'ranger', exampleSyncFn, exampleAsyncFn });
 }
 
 const mymodel = defineMyModel(require('dynamodb'));
+```
+
+### `AwaitWrap`
+
+If you would like to enable an `await`able model, we have a class for that.
+
+Building on the previous example...
+
+```js
+const { AwaitWrap } = require('dynastar');
+
+const myAwaitModel = new AwaitWrap(mymodel);
+
+// In this circumstance we have a sync function and async function that was
+// added as "extra" onto the model itself. In this context the sync function
+// is left untouch but the async callback functon is made to be a `thenable`
+// that can be awaited
+
+const asyncResult = await myAwaitModel.exampleAsyncFn(data);
+const syncResult = myAwaitModel.exampleSyncFn(data);
+
 ```
 
 ## test

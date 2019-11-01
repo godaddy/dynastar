@@ -30,7 +30,7 @@ class AwaitWrap {
         const fn = model[name];
         // Here we basically assume that unless its already an async function
         //  its callback based and we thenify it
-        if (toString.call(fn).toLowerCase().slice(8, -1) !== 'asyncfunction') {
+        if (!isAsyncFn(fn) && fn.length >= 2) {
           this[name] = function () {
             return thenify(model, name, ...arguments);
           };
@@ -149,3 +149,12 @@ class AwaitWrap {
 }
 
 module.exports = AwaitWrap;
+
+/**
+ * @function isAsyncFn
+ * @param {Function} fn Function to check type of
+ * @returns {Boolean} true/false
+ */
+function isAsyncFn(fn) {
+  return toString.call(fn).toLowerCase().slice(8, -1) === 'asyncfunction';
+}

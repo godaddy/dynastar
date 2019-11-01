@@ -24,9 +24,7 @@ class Dynastar {
     // added to this class while also being able to track their name so other wrappers
     // like AwaitWrap can auto hoist them as well
     this.hoistable = Object.keys(fns);
-    this.hoistable.forEach((key) => {
-      this[key] = fns[key];
-    });
+    Object.assign(this, fns);
 
   }
   /**

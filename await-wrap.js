@@ -116,7 +116,7 @@ class AwaitWrap {
    * @returns {Thenable} wrapped result
    */
   ensure() {
-    return thenify(this.model, 'ensureTables');
+    return this.ensureTables();
   }
   /**
    * Thenable wrap the ensureTables method
@@ -125,7 +125,7 @@ class AwaitWrap {
    * @returns {Thenable} wrapped result
    */
   ensureTables() {
-    return this.ensure();
+    return thenify(this.model, 'ensureTables');
   }
 
   /**
@@ -135,7 +135,7 @@ class AwaitWrap {
    * @returns {Thenable} wrapped result
    */
   drop() {
-    return thenify(this.model, 'dropTables');
+    return this.dropTables();
   }
   /**
    * Thenable wrap the dropTables method
@@ -144,7 +144,7 @@ class AwaitWrap {
    * @returns {Thenable} wrapped result
    */
   dropTables() {
-    return this.drop();
+    return thenify(this.model, 'dropTables');
   }
 }
 

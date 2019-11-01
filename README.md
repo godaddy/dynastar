@@ -31,10 +31,10 @@ function defineMyModel(dynamo) {
     }
   });
   //
-  // A sync function must have a length of less than 2 if you are to be able
+  // A sync function must have a length of less than 2 if you want
   // to use the AwaitWrap wrapper
   //
-  function exampleSyncFn() {
+  function exampleSyncFn(data) {
     // do something sync
     return someSyncResult;
   }

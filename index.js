@@ -1,11 +1,12 @@
 const through = require('through2');
 const ls = require('list-stream');
+const AwaitWrap = require('./await-wrap');
 
 /**
  * Datastar API compatibility
  * @class
  */
-class Compat {
+class Dynastar {
   /**
    * @constructor
    * @param {Object} options Configuration
@@ -14,11 +15,17 @@ class Compat {
    *  @param {String} [options.rangeKey] The rangeKey for the model
    *  @param {Function} [options.createKey] The function to create the hashKey for certain models
    */
-  constructor({ model, hashKey = 'key', rangeKey, createKey }) {
+  constructor({ model, hashKey = 'key', rangeKey, createKey, ...fns }) {
     this.model = model;
     this.hashKey = hashKey;
     this.rangeKey = rangeKey;
     this._createKey = createKey;
+    // The idea of what we are doing here is to enable a way for functions to be
+    // added to this class while also being able to track their name so other wrappers
+    // like AwaitWrap can auto hoist them as well
+    this.hoistable = Object.keys(fns);
+    Object.assign(this, fns);
+
   }
   /**
    * @function create
@@ -138,4 +145,6 @@ class Compat {
 }
 
 
-module.exports = Compat;
+module.exports = Dynastar;
+module.exports.AwaitWrap = AwaitWrap;
+module.exports.Dynastar = Dynastar;

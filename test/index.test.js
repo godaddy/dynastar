@@ -7,8 +7,7 @@ const AwsLiveness = require('aws-liveness');
 const sinon = require('sinon');
 const Joi = require('joi');
 const uuid = require('uuid');
-const Dynastar = require('..');
-const AwaitWrap = Dynastar.AwaitWrap;
+const { Dynastar, AwaitWrap } = require('..');
 
 assume.use(require('assume-sinon'));
 

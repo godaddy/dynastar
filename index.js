@@ -147,3 +147,4 @@ class Dynastar {
 
 module.exports = Dynastar;
 module.exports.AwaitWrap = AwaitWrap;
+module.exports.Dynastar = Dynastar;

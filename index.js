@@ -1,7 +1,6 @@
 const through = require('through2');
 const ls = require('list-stream');
 const AwaitWrap = require('./await-wrap');
-var omit = require('lodash.omit');
 
 /**
  * Datastar API compatibility
@@ -36,7 +35,7 @@ class Dynastar {
    */
   create(data, callback) {
     const opts = this._computeKeyOpts(data);
-    return this.model.create({ ...opts, ...this._omitGlobalTableData(data) }, callback);
+    return this.model.create(this._omitGlobalTableData({ ...opts, ...data }), callback);
   }
   /**
    * @function update
@@ -46,7 +45,7 @@ class Dynastar {
    */
   update(data, callback) {
     const opts = this._computeKeyOpts(data);
-    return this.model.update({ ...opts, ...this._omitGlobalTableData(data) }, callback);
+    return this.model.update(this._omitGlobalTableData({ ...opts, ...data }), callback);
   }
   /**
    * @function remove
@@ -151,11 +150,10 @@ class Dynastar {
    * @returns {Object} The model data without the global-table attributes
    */
   _omitGlobalTableData(data) {
-    return omit(data, [
-      'aws:rep:deleting',
-      'aws:rep:updatetime',
-      'aws:rep:updateregion'
-    ]);
+    delete data['aws:rep:deleting'];
+    delete data['aws:rep:updatetime'];
+    delete data['aws:rep:updateregion'];
+    return data;
   }
 }
 

@@ -5,7 +5,6 @@
   "main": "index.js",
   "dependencies": {
     "list-stream": "^2.0.0",
-    "lodash.omit": "^4.5.0",
     "through2": "^3.0.1",
     "tinythen": "^1.0.1"
   },

@@ -101,7 +101,7 @@ class Dynastar {
     // These models are weird and dont even have proper getters so we have to
     // just use it as raw json so we can expect the object to have
     // properties
-    var stream = query.loadAll().exec().pipe(through.obj(function (res, enc, cb) {
+    const stream = query.loadAll().exec().pipe(through.obj(function (res, enc, cb) {
       res = res.Items || res;
       for (const d of res) {
         this.push(d && d.toJSON());

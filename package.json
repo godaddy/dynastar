@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "list-stream": "^2.0.0",
+    "lodash.omit": "^4.5.0",
     "through2": "^3.0.1",
     "tinythen": "^1.0.1"
   },
@@ -27,7 +28,7 @@
     "test": "nyc mocha test/*.test.js",
     "lint": "eslint-godaddy --fix *.js test/*.js",
     "posttest": "npm run lint",
-    "localstack": "docker run -it -p 4569:4569 --rm localstack/localstack:0.10.3"
+    "localstack": "docker run -it -p 4569:4569 -e SERVICES=dynamodb --rm localstack/localstack:0.10.3"
   },
   "repository": {
     "type": "git",

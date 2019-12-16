@@ -35,7 +35,7 @@ class Dynastar {
    */
   create(data, callback) {
     const opts = this._computeKeyOpts(data);
-    return this.model.create({ ...opts, ...data }, callback);
+    return this.model.create(this._omitGlobalTableData({ ...opts, ...data }), callback);
   }
   /**
    * @function update
@@ -45,7 +45,7 @@ class Dynastar {
    */
   update(data, callback) {
     const opts = this._computeKeyOpts(data);
-    return this.model.update({ ...opts, ...data }, callback);
+    return this.model.update(this._omitGlobalTableData({ ...opts, ...data }), callback);
   }
   /**
    * @function remove
@@ -65,8 +65,8 @@ class Dynastar {
    */
   get(data, callback) {
     const opts = this._computeKeyOpts(data);
-    return this.model.get(opts, (err, data) => {
-      callback(err, data && data.toJSON());
+    return this.model.get(opts, (err, res) => {
+      callback(err, res && res.toJSON());
     });
   }
   /**
@@ -101,9 +101,9 @@ class Dynastar {
     // These models are weird and dont even have proper getters so we have to
     // just use it as raw json so we can expect the object to have
     // properties
-    var stream = query.loadAll().exec().pipe(through.obj(function (data, enc, cb) {
-      data = data.Items || data;
-      for (const d of data) {
+    const stream = query.loadAll().exec().pipe(through.obj(function (res, enc, cb) {
+      res = res.Items || res;
+      for (const d of res) {
         this.push(d && d.toJSON());
       }
       cb();
@@ -141,6 +141,19 @@ class Dynastar {
     }
 
     return ret;
+  }
+
+  /**
+   * Removes attributes that are created by Global Tables and should never be written.
+   * @see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/globaltables_HowItWorks.html
+   * @param {Object} data The model data
+   * @returns {Object} The model data without the global-table attributes
+   */
+  _omitGlobalTableData(data) {
+    delete data['aws:rep:deleting'];
+    delete data['aws:rep:updatetime'];
+    delete data['aws:rep:updateregion'];
+    return data;
   }
 }
 

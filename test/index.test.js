@@ -1,4 +1,8 @@
-/* eslint max-nested-callbacks: ["error", 10]*/
+/* eslint
+  max-nested-callbacks: ["error", 10],
+  max-statements: 0,
+  no-process-env: 0
+*/
 const assume = require('assume');
 const async = require('async');
 const dynamo = require('dynamodb-x');
@@ -106,8 +110,8 @@ describe('Dynastar - index.js', function () {
     const spec = { hello: 'what', what: id };
     wrapped.create(spec, (err) => {
       assume(err).is.falsey();
-      wrapped.get(spec, (err, res) => {
-        assume(err).is.falsey();
+      wrapped.get(spec, (getErr, res) => {
+        assume(getErr).is.falsey();
         assume(spec).eql(res);
         wrapped.remove(spec, done);
       });
@@ -118,15 +122,73 @@ describe('Dynastar - index.js', function () {
     const spec = { hello: 'what', what: id };
     wrapped.create(spec, (err) => {
       assume(err).is.falsey();
-      wrapped.get(spec, (err, res) => {
-        assume(err).is.falsey();
+      wrapped.get(spec, (getErr, res) => {
+        assume(getErr).is.falsey();
         assume(spec).eql(res);
-        wrapped.update({ ...spec, another: 'key' }, (err) => {
-          assume(err).is.falsey();
-          wrapped.findOne(spec, (err, res) => {
-            assume(err).is.falsey();
-            assume(res.another).equals('key');
+        wrapped.update({ ...spec, another: 'key' }, (updateErr) => {
+          assume(updateErr).is.falsey();
+          wrapped.findOne(spec, (findErr, findRes) => {
+            assume(findErr).is.falsey();
+            assume(findRes.another).equals('key');
             wrapped.remove(spec, done);
+          });
+        });
+      });
+    });
+  });
+
+  describe('Global Table attributes', function () {
+    it('should strip out global table attributes on create', function (done) {
+      const spec = {
+        'hello': 'what',
+        'what': id,
+        'aws:rep:deleting': 'some-deleting value',
+        'aws:rep:updatetime': 'some-update-time value',
+        'aws:rep:updateregion': 'some-update-region value'
+      };
+      const expected = {
+        hello: spec.hello,
+        what: spec.what
+      };
+
+      wrapped.create(spec, (err) => {
+        assume(err).is.falsey();
+        wrapped.get(spec, (getErr, res) => {
+          assume(getErr).is.falsey();
+          assume(res).eql(expected);
+
+          assume(spec).to.have.property('aws:rep:deleting');
+          assume(spec).to.have.property('aws:rep:updatetime');
+          assume(spec).to.have.property('aws:rep:updateregion');
+          wrapped.remove(res, done);
+        });
+      });
+    });
+
+    it('should strip out global table attributes on update', function (done) {
+      const spec = { hello: 'what', what: id };
+      wrapped.create(spec, (err) => {
+        assume(err).is.falsey();
+        wrapped.get(spec, (getErr, res) => {
+          assume(getErr).is.falsey();
+          assume(spec).eql(res);
+          const updatedSpec = {
+            ...spec,
+            'another': 'key',
+            'aws:rep:deleting': 'some-deleting value',
+            'aws:rep:updatetime': 'some-update-time value',
+            'aws:rep:updateregion': 'some-update-region value'
+          };
+          wrapped.update(updatedSpec, (updateErr) => {
+            assume(updateErr).is.falsey();
+            wrapped.findOne(spec, (findErr, findRes) => {
+              assume(findErr).is.falsey();
+              assume(findRes.another).equals('key');
+              assume(updatedSpec).to.have.property('aws:rep:deleting');
+              assume(updatedSpec).to.have.property('aws:rep:updatetime');
+              assume(updatedSpec).to.have.property('aws:rep:updateregion');
+              wrapped.remove(spec, done);
+            });
           });
         });
       });

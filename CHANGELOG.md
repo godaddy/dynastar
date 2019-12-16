@@ -1,5 +1,7 @@
 # CHANGELOG
 
+### 1.1.1
+
 - [#2] Remove Global Table attributes (`aws:rep:deleting`, `aws:rep:updatetime`, `aws:rep:updateregion`) when creating or updating records.
 
 ### 1.1.0

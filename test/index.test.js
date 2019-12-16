@@ -156,6 +156,10 @@ describe('Dynastar - index.js', function () {
         wrapped.get(spec, (getErr, res) => {
           assume(getErr).is.falsey();
           assume(res).eql(expected);
+
+          assume(spec).to.have.property('aws:rep:deleting');
+          assume(spec).to.have.property('aws:rep:updatetime');
+          assume(spec).to.have.property('aws:rep:updateregion');
           wrapped.remove(res, done);
         });
       });
@@ -168,17 +172,21 @@ describe('Dynastar - index.js', function () {
         wrapped.get(spec, (getErr, res) => {
           assume(getErr).is.falsey();
           assume(spec).eql(res);
-          wrapped.update({
+          const updatedSpec = {
             ...spec,
             'another': 'key',
             'aws:rep:deleting': 'some-deleting value',
             'aws:rep:updatetime': 'some-update-time value',
             'aws:rep:updateregion': 'some-update-region value'
-          }, (updateErr) => {
+          };
+          wrapped.update(updatedSpec, (updateErr) => {
             assume(updateErr).is.falsey();
             wrapped.findOne(spec, (findErr, findRes) => {
               assume(findErr).is.falsey();
               assume(findRes.another).equals('key');
+              assume(updatedSpec).to.have.property('aws:rep:deleting');
+              assume(updatedSpec).to.have.property('aws:rep:updatetime');
+              assume(updatedSpec).to.have.property('aws:rep:updateregion');
               wrapped.remove(spec, done);
             });
           });

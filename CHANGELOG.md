@@ -1,5 +1,8 @@
 # CHANGELOG
 
+- Make sure we can catch exceptions from `findAll`
+- Make sure callers can easily call a `findAll` variant with indexes
+
 ### 1.1.1
 
 - [#2] Remove Global Table attributes (`aws:rep:deleting`, `aws:rep:updatetime`, `aws:rep:updateregion`) when creating or updating records.

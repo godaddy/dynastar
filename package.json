@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "list-stream": "^2.0.0",
+    "once": "^1.4.0",
     "through2": "^3.0.1",
     "tinythen": "^1.0.1"
   },

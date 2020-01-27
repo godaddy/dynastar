@@ -1,6 +1,6 @@
 # CHANGELOG
 
-- Make sure we can catch exceptions from `findAll`
+- [#3] Make sure we can catch exceptions from `findAll`
 - Make sure callers can easily call a `findAll` variant with indexes
 
 ### 1.1.1
@@ -17,3 +17,4 @@
 
 [#1]: https://github.com/godaddy/dynastar/pull/1
 [#2]: https://github.com/godaddy/dynastar/pull/2
+[#3]: https://github.com/godaddy/dynastar/pull/3

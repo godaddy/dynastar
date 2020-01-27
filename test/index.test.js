@@ -55,7 +55,7 @@ describe('Dynastar - index.js', function () {
   });
 
   afterEach(function (done) {
-    wrapped.findAll({ hello: 'there' }, (err, result) => {
+    wrapped.findAll({ }, (err, result) => {
       if (err) return done(err);
       async.each(result, wrapped.remove.bind(wrapped), done);
     });
@@ -132,6 +132,67 @@ describe('Dynastar - index.js', function () {
             assume(findRes.another).equals('key');
             wrapped.remove(spec, done);
           });
+        });
+      });
+    });
+  });
+
+  describe('options', function () {
+    it('should be allowed on create', function (done) {
+      const spec = { hello: 'what', what: id };
+      wrapped.create(spec, { overwrite: false }, function (initialError) {
+        assume(initialError).to.be.falsey();
+
+        wrapped.create(spec, { overwrite: false }, function (err) {
+          assume(err).is.truthy();
+          assume(err.message).to.equal('The conditional request failed');
+          done();
+        });
+      });
+    });
+
+    it('should be allowed on update', function (done) {
+      const originalSpec = { hello: 'what', what: id, another: 'foo' };
+      const updatedSpec = { ...originalSpec, another: 'bar' };
+
+      wrapped.create(originalSpec, function (initialError) {
+        assume(initialError).to.be.falsey();
+
+        wrapped.update(updatedSpec, { ReturnValues: 'ALL_OLD', expected: { another: 'foo' } }, function (err, res) {
+          assume(err).is.falsey();
+          assume(res).is.truthy();
+          assume(res.toJSON().another).to.equal('foo');
+          done();
+        });
+      });
+    });
+
+    it('should be allowed on remove', function (done) {
+      const spec = { hello: 'what', what: id };
+
+      wrapped.create({ ...spec, another: 'foo' }, function (initialError) {
+        assume(initialError).to.be.falsey();
+
+        wrapped.remove(spec, { expected: { another: 'foo' } }, function (err) {
+          assume(err).is.falsey();
+          done();
+        });
+      });
+    });
+
+    it('should be allowed on get', function (done) {
+      const spec = { hello: 'what', what: id, another: 'foo' };
+
+      wrapped.create(spec, function (initialError) {
+        assume(initialError).to.be.falsey();
+
+        wrapped.get(spec, { ConsistentRead: true, AttributesToGet: ['hello', 'another'] }, function (err, res) {
+          assume(err).is.falsey();
+          assume(res).is.truthy();
+          assume(res).has.property('hello', 'what');
+          assume(res).has.property('another', 'foo');
+          assume(res).to.not.have.property('what');
+          done();
         });
       });
     });

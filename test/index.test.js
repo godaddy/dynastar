@@ -79,30 +79,6 @@ describe('Dynastar - index.js', function () {
     wrapped.dropTables(done);
   });
 
-  it('should catch table not found errors', function (done) {
-    const myHashKey = 'hello';
-    const myModel = dynamo.define('badTable', {
-      hashKey,
-      rangeKey,
-      schema: {
-        hello: Joi.string(),
-        world: Joi.string().allow(null)
-      }
-    });
-
-    const myWrapped = new Dynastar({
-      model: myModel,
-      hashKey: myHashKey
-    });
-
-    myWrapped.findAll({
-      hello: 'world'
-    }, (error) => {
-      assume(error).is.truthy();
-      done();
-    });
-  });
-
   it('should support the datastar api interface', function () {
     assume(wrapped.create).is.a('function');
     assume(wrapped.remove).is.a('function');
@@ -142,6 +118,60 @@ describe('Dynastar - index.js', function () {
     stream.on('data', function (data) {
       assume(data.hello).equals('there');
     }).on('end', done);
+  });
+
+  it('should catch table not found errors in findAll', function (done) {
+    const myHashKey = 'hello';
+    const myModel = dynamo.define('badTable', {
+      hashKey,
+      rangeKey,
+      schema: {
+        hello: Joi.string(),
+        world: Joi.string().allow(null)
+      }
+    });
+
+    const myWrapped = new Dynastar({
+      model: myModel,
+      hashKey: myHashKey
+    });
+
+    myWrapped.findAll({
+      hello: 'world'
+    }, (error) => {
+      assume(error).is.truthy();
+      done();
+    });
+  });
+
+  it('should emit table not found errors with streams in findAll', function (done) {
+    const myHashKey = 'hello';
+    const myModel = dynamo.define('badTable', {
+      hashKey,
+      rangeKey,
+      schema: {
+        hello: Joi.string(),
+        world: Joi.string().allow(null)
+      }
+    });
+
+    const myWrapped = new Dynastar({
+      model: myModel,
+      hashKey: myHashKey
+    });
+
+    const stream = myWrapped.findAll({
+      hello: 'world'
+    });
+
+    stream
+      .on('data', function () {
+        done(new Error('Unexpected received data instead of error.'));
+      })
+      .on('error', function (error) {
+        assume(error).is.truthy();
+        done();
+      });
   });
 
   it('should work with get with hash and rangeKey', function (done) {

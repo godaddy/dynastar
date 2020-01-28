@@ -135,9 +135,14 @@ class Dynastar {
       cb();
     }));
 
+    // Proxy errors to the output stream
+    rawStream.on('error', function (error) {
+      stream.emit('error', error);
+    });
+
     if (callback) {
       const lsStream = stream.pipe(ls.obj(callback));
-      rawStream.on('error', callback);
+      // Proxy errors to the callback
       stream.on('error', callback);
       lsStream.on('error', callback);
       return lsStream;

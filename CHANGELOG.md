@@ -2,6 +2,7 @@
 
 - [#3] Make sure we can catch exceptions from `findAll`
 - Make sure callers can easily call a `findAll` variant with indexes
+- Dropped `node@8` support
 
 ### 1.1.1
 

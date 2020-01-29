@@ -1,3 +1,4 @@
+const { pipeline } = require('stream');
 const through = require('through2');
 const ls = require('list-stream');
 const once = require('once');
@@ -127,28 +128,38 @@ class Dynastar {
     // just use it as raw json so we can expect the object to have
     // properties
     const rawStream = query.loadAll().exec();
-    const stream = rawStream.pipe(through.obj(function (res, enc, cb) {
+    const throughStream = through.obj(function (res, enc, cb) {
       res = res.Items || res;
       for (const d of res) {
         this.push(d && d.toJSON());
       }
       cb();
-    }));
-
-    // Proxy errors to the output stream
-    rawStream.on('error', function (error) {
-      stream.emit('error', error);
     });
 
     if (callback) {
-      const lsStream = stream.pipe(ls.obj(callback));
-      // Proxy errors to the callback
-      stream.on('error', callback);
-      lsStream.on('error', callback);
+      const lsStream = ls.obj(callback);
+      pipeline(
+        rawStream,
+        throughStream,
+        lsStream,
+        function (error) {
+          if (error) return callback(error);
+        }
+      );
       return lsStream;
     }
 
-    return stream;
+    pipeline(
+      rawStream,
+      throughStream,
+      function (error) {
+        // Need to re-emit the caught error on the result stream
+        if (error) {
+          throughStream.emit('error', error);
+        }
+      }
+    );
+    return throughStream;
   }
 
   /**

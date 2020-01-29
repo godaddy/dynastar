@@ -3,8 +3,12 @@
   "version": "1.1.1",
   "description": "A simple compatibility layer for dynamodb models to be compatible with the datastar model API",
   "main": "index.js",
+  "engines": {
+    "node": ">=10.0.0"
+  },
   "dependencies": {
     "list-stream": "^2.0.0",
+    "once": "^1.4.0",
     "through2": "^3.0.1",
     "tinythen": "^1.0.1"
   },

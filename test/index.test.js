@@ -38,8 +38,22 @@ describe('Dynastar - index.js', function () {
       hello: Joi.string(),
       what: dynamo.types.timeUUID(),
       another: Joi.string().allow(null)
-    }
+    },
+    indexes: [{
+      name: 'ByIndex',
+      hashKey: 'another',
+      type: 'global'
+    }]
   });
+
+  function findByIndex(data, callback) {
+    const { another, hello } = data;
+
+    let query = this.model.query(another).usingIndex('ByIndex');
+    if (hello) query = query.where('hello').equals(hello);
+
+    this.findAllQuery(query, callback);
+  }
 
   before(function (done) {
     wrapped = new Dynastar({ model, hashKey, rangeKey });
@@ -104,6 +118,60 @@ describe('Dynastar - index.js', function () {
     stream.on('data', function (data) {
       assume(data.hello).equals('there');
     }).on('end', done);
+  });
+
+  it('should catch table not found errors in findAll', function (done) {
+    const myHashKey = 'hello';
+    const myModel = dynamo.define('badTable', {
+      hashKey,
+      rangeKey,
+      schema: {
+        hello: Joi.string(),
+        world: Joi.string().allow(null)
+      }
+    });
+
+    const myWrapped = new Dynastar({
+      model: myModel,
+      hashKey: myHashKey
+    });
+
+    myWrapped.findAll({
+      hello: 'world'
+    }, (error) => {
+      assume(error).is.truthy();
+      done();
+    });
+  });
+
+  it('should emit table not found errors with streams in findAll', function (done) {
+    const myHashKey = 'hello';
+    const myModel = dynamo.define('badTable', {
+      hashKey,
+      rangeKey,
+      schema: {
+        hello: Joi.string(),
+        world: Joi.string().allow(null)
+      }
+    });
+
+    const myWrapped = new Dynastar({
+      model: myModel,
+      hashKey: myHashKey
+    });
+
+    const stream = myWrapped.findAll({
+      hello: 'world'
+    });
+
+    stream
+      .on('data', function () {
+        done(new Error('Unexpected received data instead of error.'));
+      })
+      .on('error', function (error) {
+        assume(error).is.truthy();
+        done();
+      });
   });
 
   it('should work with get with hash and rangeKey', function (done) {
@@ -224,6 +292,29 @@ describe('Dynastar - index.js', function () {
         const modified = await wmodel.somethingAsync(res);
         assume(modified.somethingAsync).is.true();
       }
+    });
+
+    it('should allow query by index', function (done) {
+      const wmodel = new Dynastar({ model, hashKey, rangeKey, findByIndex });
+      assume(wmodel.findByIndex).is.a('function');
+
+      wmodel.create({ hello: 'bob', another: 'foo' }, (error) => {
+        if (error) return done(error);
+
+        wmodel.create({ hello: 'cruel world', another: 'foo' }, (error2) => {
+          if (error2) return done(error2);
+
+          wmodel.findByIndex({ another: 'foo' }, (findError, results) => {
+            if (findError) return done(findError);
+
+            assume(results).to.have.length(2);
+            const hellos = results.map(r => r.hello);
+            assume(hellos).contains('bob');
+            assume(hellos).contains('cruel world');
+            done();
+          });
+        });
+      });
     });
   });
 });

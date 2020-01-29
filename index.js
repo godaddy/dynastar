@@ -1,5 +1,7 @@
+const { pipeline } = require('stream');
 const through = require('through2');
 const ls = require('list-stream');
+const once = require('once');
 const AwaitWrap = require('./await-wrap');
 
 /**
@@ -20,13 +22,14 @@ class Dynastar {
     this.hashKey = hashKey;
     this.rangeKey = rangeKey;
     this._createKey = createKey;
+
     // The idea of what we are doing here is to enable a way for functions to be
     // added to this class while also being able to track their name so other wrappers
     // like AwaitWrap can auto hoist them as well
     this.hoistable = Object.keys(fns);
     Object.assign(this, fns);
-
   }
+
   /**
    * @function create
    * @param {Object} data Model data object
@@ -37,6 +40,7 @@ class Dynastar {
     const opts = this._computeKeyOpts(data);
     return this.model.create(this._omitGlobalTableData({ ...opts, ...data }), callback);
   }
+
   /**
    * @function update
    * @param {Object} data Model data object
@@ -47,6 +51,7 @@ class Dynastar {
     const opts = this._computeKeyOpts(data);
     return this.model.update(this._omitGlobalTableData({ ...opts, ...data }), callback);
   }
+
   /**
    * @function remove
    * @param {Object} data Model data object
@@ -57,6 +62,7 @@ class Dynastar {
     const opts = this._computeKeyOpts(data);
     return this.model.destroy(opts, callback);
   }
+
   /**
    * @function get
    * @param {Object} data Model data object
@@ -69,6 +75,7 @@ class Dynastar {
       callback(err, res && res.toJSON());
     });
   }
+
   /**
    * @function findOne
    * @param {Object} data Model data object
@@ -77,6 +84,7 @@ class Dynastar {
   findOne() {
     return this.get(...arguments);
   }
+
   /**
    * @function findAll
    * @param {Object} data Datastar find object or model data object
@@ -98,20 +106,62 @@ class Dynastar {
 
     const query = key ? this.model.query(key) : this.model.scan();
     if (fields) query.attributes(fields);
-    // These models are weird and dont even have proper getters so we have to
+
+    return this.findAllQuery(query, callback);
+  }
+
+  /**
+   * Safely runs a query (or table scan).
+   * This is useful when you need to query a secondary indexes and want our default item parsing logic.
+   *
+   * @function findAllQuery
+   * @param {Object} query A DynamoDB model query or scan object to execute
+   * @param {Function} [callback] Continuation function when finished
+   * @returns {Stream} Stream with results
+   */
+  findAllQuery(query, callback) {
+    if (callback) {
+      callback = once(callback);
+    }
+
+    // These models are weird and don't even have proper getters so we have to
     // just use it as raw json so we can expect the object to have
     // properties
-    const stream = query.loadAll().exec().pipe(through.obj(function (res, enc, cb) {
+    const rawStream = query.loadAll().exec();
+    const throughStream = through.obj(function (res, enc, cb) {
       res = res.Items || res;
       for (const d of res) {
         this.push(d && d.toJSON());
       }
       cb();
-    }));
-    if (callback) return stream.pipe(ls.obj(callback));
-    return stream;
+    });
 
+    if (callback) {
+      const lsStream = ls.obj(callback);
+      pipeline(
+        rawStream,
+        throughStream,
+        lsStream,
+        function (error) {
+          if (error) return callback(error);
+        }
+      );
+      return lsStream;
+    }
+
+    pipeline(
+      rawStream,
+      throughStream,
+      function (error) {
+        // Need to re-emit the caught error on the result stream
+        if (error) {
+          throughStream.emit('error', error);
+        }
+      }
+    );
+    return throughStream;
   }
+
   /**
    *  @function ensureTables
    *  @returns {any} whatever the model returns
@@ -119,6 +169,7 @@ class Dynastar {
   ensureTables() {
     return this.model.createTable(...arguments);
   }
+
   /**
    * @function dropTables
    * @returns {any} whatever the model returns
@@ -126,6 +177,7 @@ class Dynastar {
   dropTables() {
     return this.model.deleteTable(...arguments);
   }
+
   /**
    * @function _computeKeyOpts
    * @param {Object} data Parameters for given model

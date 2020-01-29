@@ -33,45 +33,54 @@ class Dynastar {
   /**
    * @function create
    * @param {Object} data Model data object
+   * @param {Object} [options] Optional options object
    * @param {Function} callback Continuation function when finished
    * @returns {any} whatever the model returns
    */
-  create(data, callback) {
+  create(data, ...args) {
     const opts = this._computeKeyOpts(data);
-    return this.model.create(this._omitGlobalTableData({ ...opts, ...data }), callback);
+    return this.model.create(this._omitGlobalTableData({ ...opts, ...data }), ...args);
   }
 
   /**
    * @function update
    * @param {Object} data Model data object
+   * @param {Object} [options] Optional options object
    * @param {Function} callback Continuation function when finished
    * @returns {any} whatever the model returns
    */
-  update(data, callback) {
+  update(data, ...args) {
     const opts = this._computeKeyOpts(data);
-    return this.model.update(this._omitGlobalTableData({ ...opts, ...data }), callback);
+    return this.model.update(this._omitGlobalTableData({ ...opts, ...data }), ...args);
   }
 
   /**
    * @function remove
    * @param {Object} data Model data object
+   * @param {Object} [options] Optional options object
    * @param {Function} callback Continuation function when finished
    * @returns {any} whatever the model returns
    */
-  remove(data, callback) {
+  remove(data, ...args) {
     const opts = this._computeKeyOpts(data);
-    return this.model.destroy(opts, callback);
+    return this.model.destroy(opts, ...args);
   }
 
   /**
    * @function get
    * @param {Object} data Model data object
+   * @param {Object} [options] Optional options object
    * @param {Function} callback Continuation function when finished
    * @returns {any} whatever the model returns
    */
-  get(data, callback) {
+  get(data, options, callback) {
+    if (!callback && typeof options === 'function') {
+      callback = options;
+      options = {};
+    }
+
     const opts = this._computeKeyOpts(data);
-    return this.model.get(opts, (err, res) => {
+    return this.model.get(opts, options, (err, res) => {
       callback(err, res && res.toJSON());
     });
   }

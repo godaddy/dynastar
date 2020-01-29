@@ -19,6 +19,7 @@ class AwaitWrap {
     this.model = model;
     this._hoist(model);
   }
+
   /**
    * Hoist any labeled hoistable functions found on the Dynastar compatibility wrapper
    *
@@ -39,8 +40,8 @@ class AwaitWrap {
         }
       }
     }
-
   }
+
   /**
    * Thenable wrap the create method
    *
@@ -80,6 +81,7 @@ class AwaitWrap {
   findOne() {
     return thenify(this.model, 'findOne', ...arguments);
   }
+
   /**
    * Thenable wrap the get method
    *
@@ -89,6 +91,7 @@ class AwaitWrap {
   get() {
     return this.findOne(...arguments);
   }
+
   /**
    * Return the normal model findAll for the stream
    * @function findAllStream
@@ -110,6 +113,16 @@ class AwaitWrap {
   }
 
   /**
+   * Thenable wrap the loadAllQuery method
+   *
+   * @function findAll
+   * @returns {Thenable} wrapped result
+   */
+  findAllQuery() {
+    return thenify(this.model, 'findAllQuery', ...arguments);
+  }
+
+  /**
    * Thenable wrap the ensureTables method
    *
    * @function ensure
@@ -118,6 +131,7 @@ class AwaitWrap {
   ensure() {
     return this.ensureTables();
   }
+
   /**
    * Thenable wrap the ensureTables method
    *
@@ -137,6 +151,7 @@ class AwaitWrap {
   drop() {
     return this.dropTables();
   }
+
   /**
    * Thenable wrap the dropTables method
    *

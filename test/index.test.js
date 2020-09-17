@@ -206,7 +206,7 @@ describe('Dynastar - index.js', function () {
   });
 
   describe('key builders', function () {
-    let myModel, myHashKey, myRangeKey;
+    let myModel, myHashKey, myRangeKey, myWrapped;
 
     before(function () {
       myHashKey = 'key';
@@ -224,9 +224,15 @@ describe('Dynastar - index.js', function () {
       });
     });
 
+    afterEach(function (done) {
+      if (myWrapped) {
+        myWrapped.dropTables(done);
+      }
+    });
+
     it('supports createKey for building the hash key', function (done) {
       const spec = { hello: 'world', what: 'thing' };
-      const myWrapped = new Dynastar({
+      myWrapped = new Dynastar({
         model: myModel,
         hashKey: myHashKey,
         rangeKey: myRangeKey,
@@ -252,7 +258,7 @@ describe('Dynastar - index.js', function () {
 
     it('supports createHashKey which overrides createKey for building the hash key', function (done) {
       const spec = { hello: 'world', what: 'thing' };
-      const myWrapped = new Dynastar({
+      myWrapped = new Dynastar({
         model: myModel,
         hashKey: myHashKey,
         rangeKey: myRangeKey,
@@ -280,7 +286,7 @@ describe('Dynastar - index.js', function () {
 
     it('supports createRangeKey for building the range key', function (done) {
       const spec = { key: 'findMe', hello: 'world', other: 'something' };
-      const myWrapped = new Dynastar({
+      myWrapped = new Dynastar({
         model: myModel,
         hashKey: myHashKey,
         rangeKey: myRangeKey,

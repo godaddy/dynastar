@@ -10,8 +10,8 @@ before_install:
 # package-lock.json was introduced in npm@5
 - '[[ $(node -v) =~ ^v9.*$ ]] || npm install -g npm@latest' # skipped when using node 9
 - npm install -g greenkeeper-lockfile
-- docker pull localstack/localstack
-- docker run -d --name localstack -p 4569:4569 -e SERVICES=dynamodb --rm localstack/localstack
+- docker pull localstack/localstack:0.10.3
+- docker run -d --name localstack -p 4569:4569 -e SERVICES=dynamodb --rm localstack/localstack:0.10.3
 before_script: greenkeeper-lockfile-update
 after_script: greenkeeper-lockfile-upload
 install: npm install

@@ -75,6 +75,9 @@ const syncResult = myAwaitModel.exampleSyncFn(data);
 Dynastar supports key builders for the hash and range keys. These are useful for combining
 multiple values into one.
 
+#### createHashKey
+`createHashKey` (or simply `createKey`) can be used to build a compound hash key.
+
 ```js
 const Dynastar = require('dynastar');
 const Joi = require('joi');
@@ -101,6 +104,8 @@ function defineMyModel(dynamo) {
 }
 ```
 
+#### createRangeKey
+`createRangeKey` can be used to build a compound range key.
 ```js
 const Dynastar = require('dynastar');
 const Joi = require('joi');

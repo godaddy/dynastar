@@ -226,10 +226,10 @@ describe('Dynastar - index.js', function () {
 
     afterEach(function (done) {
       if (myWrapped) {
-        myWrapped.dropTables(done);
-      } else {
-        done();
+        return void myWrapped.dropTables(done);
       }
+
+      done();
     });
 
     it('supports createKey for building the hash key', function (done) {

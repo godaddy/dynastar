@@ -200,10 +200,12 @@ class Dynastar {
       ? { key: this._createKey(data) }
       : { [this.hashKey]: data[this.hashKey] };
 
-    if (this.rangeKey && data[this.rangeKey]) {
-      ret[this.rangeKey] = this._createRangeKey
-        ? this._createRangeKey(data)
-        : data[this.rangeKey];
+    if (this.rangeKey) {
+      if (this._createRangeKey) {
+        ret[this.rangeKey] = this._createRangeKey(data);
+      } else if (data[this.rangeKey]) {
+        ret[this.rangeKey] = data[this.rangeKey];
+      }
     }
 
     return ret;

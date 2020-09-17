@@ -206,18 +206,20 @@ describe('Dynastar - index.js', function () {
   });
 
   describe('key builders', function () {
-    let myModel, myHashKey;
+    let myModel, myHashKey, myRangeKey;
 
     before(function () {
       myHashKey = 'key';
+      myRangeKey = 'what';
 
       myModel = dynamo.define('test2', {
         hashKey: myHashKey,
+        rangeKey: myRangeKey,
         schema: {
           key: Joi.string(),
           hello: Joi.string(),
           what: Joi.string(),
-          range: Joi.string()
+          other: Joi.string().allow(null)
         }
       });
     });
@@ -227,20 +229,23 @@ describe('Dynastar - index.js', function () {
       const myWrapped = new Dynastar({
         model: myModel,
         hashKey: myHashKey,
+        rangeKey: myRangeKey,
         createKey: ({ hello, what }) => `${hello}!${what}`
       });
 
-      myWrapped.create(spec, (err) => {
-        assume(err).is.falsey();
-        myWrapped.findAllQuery(myWrapped.model.query('world!thing'),  (getErr, res) => {
-          assume(getErr).is.falsey();
-          assume(res).length(1);
+      myWrapped.ensureTables(() => {
+        myWrapped.create(spec, (err) => {
+          assume(err).is.falsey();
+          myWrapped.findAllQuery(myWrapped.model.query('world!thing'),  (getErr, res) => {
+            assume(getErr).is.falsey();
+            assume(res).length(1);
 
-          const [result] = res;
-          assume(result.key).equals('world!thing');
-          assume(result.hello).equals('world');
-          assume(result.what).equals('thing');
-          myWrapped.remove(spec, done);
+            const [result] = res;
+            assume(result.key).equals('world!thing');
+            assume(result.hello).equals('world');
+            assume(result.what).equals('thing');
+            myWrapped.remove(spec, done);
+          });
         });
       });
     });
@@ -250,27 +255,52 @@ describe('Dynastar - index.js', function () {
       const myWrapped = new Dynastar({
         model: myModel,
         hashKey: myHashKey,
+        rangeKey: myRangeKey,
         createHashKey: ({ hello, what }) => `${hello}!${what}`,
         // overrides createKey
         createKey: ({ hello, what }) => `${what}!${hello}`
       });
 
-      myWrapped.create(spec, (err) => {
-        assume(err).is.falsey();
-        myWrapped.findAllQuery(myWrapped.model.query('world!thing'),  (getErr, res) => {
-          assume(getErr).is.falsey();
-          assume(res).length(1);
+      myWrapped.ensureTables(() => {
+        myWrapped.create(spec, (err) => {
+          assume(err).is.falsey();
+          myWrapped.findAllQuery(myWrapped.model.query('world!thing'),  (getErr, res) => {
+            assume(getErr).is.falsey();
+            assume(res).length(1);
 
-          const [result] = res;
-          assume(result.key).equals('world!thing');
-          assume(result.hello).equals('world');
-          assume(result.what).equals('thing');
-          myWrapped.remove(spec, done);
+            const [result] = res;
+            assume(result.key).equals('world!thing');
+            assume(result.hello).equals('world');
+            assume(result.what).equals('thing');
+            myWrapped.remove(spec, done);
+          });
         });
       });
     });
 
-    it('supports createRangeKey for building the range key');
+    it('supports createRangeKey for building the range key', function (done) {
+      const spec = { key: 'findMe', hello: 'world', other: 'something' };
+      const myWrapped = new Dynastar({
+        model: myModel,
+        hashKey: myHashKey,
+        rangeKey: myRangeKey,
+        createRangeKey: ({ hello, other }) => `${hello}!${other}`
+      });
+
+      myWrapped.ensureTables(() => {
+        myWrapped.create(spec, (err) => {
+          assume(err).is.falsey();
+          myWrapped.findAllQuery(myWrapped.model.query('findMe'),  (getErr, res) => {
+            assume(getErr).is.falsey();
+            assume(res).length(1);
+
+            const [result] = res;
+            assume(result.what).equals('world!something');
+            myWrapped.remove(spec, done);
+          });
+        });
+      });
+    });
   });
 
   describe('options', function () {

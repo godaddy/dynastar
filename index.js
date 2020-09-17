@@ -16,12 +16,15 @@ class Dynastar {
    *  @param {String} [options.hashKey='key'] The hashKey of the model
    *  @param {String} [options.rangeKey] The rangeKey for the model
    *  @param {Function} [options.createKey] The function to create the hashKey for certain models
+   *  @param {Function} [options.createHashKey] The function to create the hashKey for certain models (overrides createKey)
+   *  @param {Function} [options.createRangeKey] The function to create the rangeKey for certain models
    */
-  constructor({ model, hashKey = 'key', rangeKey, createKey, ...fns }) {
+  constructor({ model, hashKey = 'key', rangeKey, createKey, createHashKey, createRangeKey, ...fns }) {
     this.model = model;
     this.hashKey = hashKey;
     this.rangeKey = rangeKey;
-    this._createKey = createKey;
+    this._createKey = createHashKey || createKey;
+    this._createRangeKey = createRangeKey;
 
     // The idea of what we are doing here is to enable a way for functions to be
     // added to this class while also being able to track their name so other wrappers
@@ -198,7 +201,9 @@ class Dynastar {
       : { [this.hashKey]: data[this.hashKey] };
 
     if (this.rangeKey && data[this.rangeKey]) {
-      ret[this.rangeKey] = data[this.rangeKey];
+      ret[this.rangeKey] = this._createRangeKey
+        ? this._createRangeKey(data)
+        : data[this.rangeKey];
     }
 
     return ret;

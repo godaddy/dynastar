@@ -1,5 +1,7 @@
 # CHANGELOG
 
+- Add `createRangeKey` for generating the range key from multiple keys
+
 ### 1.2.0
 
 - [#4] Allow for additional options to get passed in where not already available (`get`, `create`, `update`, `remove`).

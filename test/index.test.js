@@ -205,6 +205,74 @@ describe('Dynastar - index.js', function () {
     });
   });
 
+  describe('key builders', function () {
+    let myModel, myHashKey;
+
+    before(function () {
+      myHashKey = 'key';
+
+      myModel = dynamo.define('test2', {
+        hashKey: myHashKey,
+        schema: {
+          key: Joi.string(),
+          hello: Joi.string(),
+          what: Joi.string(),
+          range: Joi.string()
+        }
+      });
+    });
+
+    it('supports createKey for building the hash key', function (done) {
+      const spec = { hello: 'world', what: 'thing' };
+      const myWrapped = new Dynastar({
+        model: myModel,
+        hashKey: myHashKey,
+        createKey: ({ hello, what }) => `${hello}!${what}`
+      });
+
+      myWrapped.create(spec, (err) => {
+        assume(err).is.falsey();
+        myWrapped.findAllQuery(myWrapped.model.query('world!thing'),  (getErr, res) => {
+          assume(getErr).is.falsey();
+          assume(res).length(1);
+
+          const [result] = res;
+          assume(result.key).equals('world!thing');
+          assume(result.hello).equals('world');
+          assume(result.what).equals('thing');
+          myWrapped.remove(spec, done);
+        });
+      });
+    });
+
+    it('supports createHashKey which overrides createKey for building the hash key', function (done) {
+      const spec = { hello: 'world', what: 'thing' };
+      const myWrapped = new Dynastar({
+        model: myModel,
+        hashKey: myHashKey,
+        createHashKey: ({ hello, what }) => `${hello}!${what}`,
+        // overrides createKey
+        createKey: ({ hello, what }) => `${what}!${hello}`
+      });
+
+      myWrapped.create(spec, (err) => {
+        assume(err).is.falsey();
+        myWrapped.findAllQuery(myWrapped.model.query('world!thing'),  (getErr, res) => {
+          assume(getErr).is.falsey();
+          assume(res).length(1);
+
+          const [result] = res;
+          assume(result.key).equals('world!thing');
+          assume(result.hello).equals('world');
+          assume(result.what).equals('thing');
+          myWrapped.remove(spec, done);
+        });
+      });
+    });
+
+    it('supports createRangeKey for building the range key');
+  });
+
   describe('options', function () {
     it('should be allowed on create', function (done) {
       const spec = { hello: 'what', what: id };

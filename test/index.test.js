@@ -170,8 +170,8 @@ describe('Dynastar - index.js', function () {
       })
       .on('error', function (error) {
         assume(error).is.truthy();
-        done();
-      });
+      })
+      .on('close', done);
   });
 
   it('should work with get with hash and rangeKey', function (done) {

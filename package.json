@@ -31,7 +31,7 @@
     "test": "nyc mocha test/*.test.js",
     "lint": "eslint-godaddy --fix *.js test/*.js",
     "posttest": "npm run lint",
-    "localstack": "docker run -it -p 4569:4569 -e SERVICES=dynamodb --rm localstack/localstack:0.10.3"
+    "localstack": "docker run -it -p 4569:4569 -e SERVICES=dynamodb --rm localstack/localstack:0.11.5"
   },
   "repository": {
     "type": "git",

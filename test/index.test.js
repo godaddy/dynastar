@@ -227,6 +227,8 @@ describe('Dynastar - index.js', function () {
     afterEach(function (done) {
       if (myWrapped) {
         myWrapped.dropTables(done);
+      } else {
+        done();
       }
     });
 

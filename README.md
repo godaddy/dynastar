@@ -71,7 +71,7 @@ const syncResult = myAwaitModel.exampleSyncFn(data);
 
 ```
 
-### key creation
+### Key creation
 Dynastar supports key builders for the hash and range keys. These are useful for combining
 multiple values into one.
 

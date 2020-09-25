@@ -1,6 +1,6 @@
 {
   "name": "dynastar",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "A simple compatibility layer for dynamodb models to be compatible with the datastar model API",
   "main": "index.js",
   "engines": {

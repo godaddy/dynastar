@@ -1,5 +1,7 @@
 # CHANGELOG
 
+### 1.3.0
+
 - [#7] Add `createRangeKey` for generating the range key from multiple keys
 
 ### 1.2.0

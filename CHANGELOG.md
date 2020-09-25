@@ -1,5 +1,8 @@
 # CHANGELOG
 
+- Bump to `dynamodb-x@2.0.0`
+- Updated `devDependencies`
+
 ### 1.3.0
 
 - [#7] Add `createRangeKey` for generating the range key from multiple keys

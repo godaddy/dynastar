@@ -1,7 +1,8 @@
 # CHANGELOG
 
 - [#9] Add support for newer localstack's where createTable no longer ignores already existing tables
-- 
+- [#10] Switch to github actions
+
 ### 1.3.0
 
 - [#7] Add `createRangeKey` for generating the range key from multiple keys
@@ -31,3 +32,4 @@
 [#4]: https://github.com/godaddy/dynastar/pull/4
 [#7]: https://github.com/godaddy/dynastar/pull/7
 [#9]: https://github.com/godaddy/dynastar/pull/9
+[#10]: https://github.com/godaddy/dynastar/pull/10

@@ -1,7 +1,12 @@
 # CHANGELOG
 
-- Bump to `dynamodb-x@2.0.0`
+- [#8] Bump to `dynamodb-x@2.0.0`
 - Updated `devDependencies`
+
+### 1.3.1
+
+- [#9] Add support for newer localstack's where createTable no longer ignores already existing tables
+- [#10] Switch to github actions
 
 ### 1.3.0
 
@@ -31,3 +36,6 @@
 [#3]: https://github.com/godaddy/dynastar/pull/3
 [#4]: https://github.com/godaddy/dynastar/pull/4
 [#7]: https://github.com/godaddy/dynastar/pull/7
+[#8]: https://github.com/godaddy/dynastar/pull/8
+[#9]: https://github.com/godaddy/dynastar/pull/9
+[#10]: https://github.com/godaddy/dynastar/pull/10

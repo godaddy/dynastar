@@ -16,7 +16,7 @@ const { Dynastar, AwaitWrap } = require('..');
 assume.use(require('assume-sinon'));
 
 const region = 'us-east-1';
-const endpoint = 'http://localhost:4569';
+const endpoint = 'http://localhost:4566';
 // Need to set some values for these for it to actually work
 process.env.AWS_ACCESS_KEY_ID = 'foobar';
 process.env.AWS_SECRET_ACCESS_KEY = 'foobar';
@@ -201,6 +201,40 @@ describe('Dynastar - index.js', function () {
             wrapped.remove(spec, done);
           });
         });
+      });
+    });
+  });
+
+  describe('ensureTables', function () {
+    it('can ensure tables multiple times without error', function (done) {
+      wrapped.ensureTables(function (error) {
+        assume(error).is.falsey();
+        wrapped.ensureTables(done);
+      });
+    });
+
+    it('yields an error when table cannot be created', function (done) {
+      // Invalid table name (too short and invalid characters)
+      const myModel = dynamo.define('🛑🛑', {
+        hashKey,
+        rangeKey,
+        schema: {
+          hello: Joi.string(),
+          what: dynamo.types.timeUUID(),
+          another: Joi.string().allow(null)
+        },
+        indexes: [{
+          name: 'ByIndex',
+          hashKey: 'another',
+          type: 'global'
+        }]
+      });
+      const myWrapped = new Dynastar({ model: myModel, hashKey, rangeKey });
+      myWrapped.ensureTables(function (error) {
+        assume(error).to.exist();
+        assume(error.message).to.include('Invalid table/index name');
+        assume(error.code).to.equal('ValidationException');
+        done();
       });
     });
   });

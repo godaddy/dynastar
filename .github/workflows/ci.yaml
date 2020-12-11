@@ -12,9 +12,9 @@ jobs:
 
     services:
       localstack:
-        image: localstack/localstack:0.11.5
+        image: localstack/localstack:0.12.2
         ports:
-          - 4569:4569
+          - 4566:4566
         options: -e SERVICES=dynamodb
 
     steps:

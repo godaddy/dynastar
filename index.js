@@ -178,8 +178,14 @@ class Dynastar {
    *  @function ensureTables
    *  @returns {any} whatever the model returns
    */
-  ensureTables() {
-    return this.model.createTable(...arguments);
+  ensureTables(...args) {
+    const [cb] = args.splice(args.length - 1, 1);
+    return this.model.createTable(...args, function (err, data) {
+      if (err && err.code === 'ResourceInUseException' && err.message === 'Table already created') {
+        return void cb(null, data);
+      }
+      cb(err, data);
+    });
   }
 
   /**

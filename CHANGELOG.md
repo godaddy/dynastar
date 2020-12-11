@@ -1,5 +1,7 @@
 # CHANGELOG
 
+- [#10] Switch to github actions
+
 ### 1.3.0
 
 - [#7] Add `createRangeKey` for generating the range key from multiple keys
@@ -28,3 +30,4 @@
 [#3]: https://github.com/godaddy/dynastar/pull/3
 [#4]: https://github.com/godaddy/dynastar/pull/4
 [#7]: https://github.com/godaddy/dynastar/pull/7
+[#10]: https://github.com/godaddy/dynastar/pull/10

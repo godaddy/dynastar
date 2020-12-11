@@ -1,5 +1,7 @@
 # CHANGELOG
 
+### 1.3.1
+
 - [#9] Add support for newer localstack's where createTable no longer ignores already existing tables
 - [#10] Switch to github actions
 

@@ -5,7 +5,7 @@
 */
 const assume = require('assume');
 const async = require('async');
-const dynamo = require('dynamodb-x');
+const dynamo = require('dynamodb');
 const { DynamoDB } = require('aws-sdk');
 const AwsLiveness = require('aws-liveness');
 const sinon = require('sinon');

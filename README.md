@@ -1,7 +1,7 @@
 # dynastar
 [![Build Status](https://travis-ci.com/godaddy/dynastar.svg?branch=master)](https://travis-ci.com/godaddy/dynastar)
 
-A simple compatibility layer for dynamodb models to be compatible with the datastar model API
+A simple compatibility layer for dynamodb models to be similar to the datastar model API
 
 ## Install
 
@@ -13,8 +13,7 @@ npm install dynastar --save
 
 When defining your [`dynamodb`](https://github.com/baseprime/dynamodb) models,
 you use `dynastar` to expose them with
-a [`datastar`](https://github.com/godaddy/datastar) API. You can optionally pass
-functions you would like to attach to the Dynastar class.
+a [`datastar`](https://github.com/godaddy/datastar)-like API.
 
 ```js
 const Dynastar = require('dynastar');
@@ -30,45 +29,11 @@ function defineMyModel(dynamo) {
       ranger: dynamo.types.timeUUID()
     }
   });
-  //
-  // A sync function must have a length of less than 2 if you want
-  // to use the AwaitWrap wrapper
-  //
-  function exampleSyncFn(data) {
-    // do something sync
-    return someSyncResult;
-  }
 
-  function exampleAsyncFn(data, next) {
-    // do something async
-    next(null, someAsyncResult);
-  }
-
-  return new Dynastar({ model, hashKey: 'hashme', rangeKey: 'ranger', exampleSyncFn, exampleAsyncFn });
+  return new Dynastar({ model, hashKey: 'hashme', rangeKey: 'ranger' });
 }
 
 const mymodel = defineMyModel(require('dynamodb'));
-```
-
-### `AwaitWrap`
-
-If you would like to enable an `await`able model, we have a class for that.
-
-Building on the previous example...
-
-```js
-const { AwaitWrap } = require('dynastar');
-
-const myAwaitModel = new AwaitWrap(mymodel);
-
-// In this circumstance we have a sync function and async function that was
-// added as "extra" onto the model itself. In this context the sync function
-// is left untouched but the async callback function is made to be a `thenable`
-// that can be awaited
-
-const asyncResult = await myAwaitModel.exampleAsyncFn(data);
-const syncResult = myAwaitModel.exampleSyncFn(data);
-
 ```
 
 ### Key creation
@@ -76,7 +41,7 @@ Dynastar supports key builders for the hash and range keys. These are useful for
 multiple values into one.
 
 #### createHashKey
-`createHashKey` (or simply `createKey`) can be used to build a compound hash key.
+`createHashKey` can be used to build a compound hash key.
 
 ```js
 const Dynastar = require('dynastar');
@@ -131,6 +96,68 @@ function defineMyModel(dynamo) {
   });
 }
 ```
+
+## Migrations
+
+### From 2 to 3
+
+Version 3 of dynastar seeks to streamline the interface and add TypeScript support. Support for node versions under 16 is not guaranteed.
+
+The constructor options have changed slightly. You now are required to pass a `hashKey` option, and the `createKey` option is now merged with the `createHashKey` option. Support for extension methods has also been removed.
+
+```diff
+const Thing = new Dynastar({
+  model,
++  hashKey = 'key',
+  rangeKey: 'category',
+-  createKey: ({ id }) => `thing:id`,
++  createHashKey: ({ id }) => `thing:id`,
+-  
+-  findByIndex() {
+-    // ...
+-  },
+-
+-  findByCategory() {
+-    // ...
+-  }
+})
+```
+
+Methods are all Promise-based, so there's no `AwaitWrap` function exposed any longer.
+
+```diff
+-model.findOne({ key: 'foo' }, (err, res) => {
+-  // Handle error
+-});
++try {
++  const res = await model.findOne({ key: 'foo' });
++} catch (err) {
++  // Handle error
++}
+```
+
+The `findAll` method now returns an async iterable rather than a Node stream.
+
+```javascript
+for await (const item of model.findAll({ key: foo })) {
+  // ...
+}
+```
+
+You can adapt it to a Stream if you want to use that interface:
+
+```javascript
+const { Readable } = require('node:stream');
+const stream = Readable.from(model.findAll({ key: 'foo' }));
+```
+
+The `findAll` method also has a new boolean parameter if you prefer to receive an `Array` of items rather than an async iterable:
+
+```javascript
+const items = await model.findAll({ key: 'foo' }, true);
+```
+
+The `get` method alias has been removed; use the `findOne` method instead. Also `ensureTables` has been renamed to `ensureTable`, and `dropTables` has been renamed to `dropTable`.
 
 ## test
 

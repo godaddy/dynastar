@@ -1,0 +1,7 @@
+{
+  "extends": "@tsconfig/node16",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "noEmit": true  // Avoid unnecessary compilation when running tests
+  }
+}

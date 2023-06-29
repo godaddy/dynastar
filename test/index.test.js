@@ -11,7 +11,7 @@ const AwsLiveness = require('aws-liveness');
 const sinon = require('sinon');
 const Joi = require('joi');
 const uuid = require('uuid');
-const { Dynastar, AwaitWrap } = require('..');
+const Dynastar = require('../src').default;
 
 assume.use(require('assume-sinon'));
 
@@ -55,55 +55,55 @@ describe('Dynastar - index.js', function () {
     this.findAllQuery(query, callback);
   }
 
-  before(function (done) {
+  before(async function () {
     wrapped = new Dynastar({ model, hashKey, rangeKey });
-    liveness.waitForServices({
+    await liveness.waitForServices({
       clients: [dynamoDriver],
       waitSeconds: 60
-    }).then(() => wrapped.ensureTables(done))
-      .catch(done);
-  });
-
-  beforeEach(function (done) {
-    wrapped.create({ hello: 'there' }, done);
-  });
-
-  afterEach(function (done) {
-    wrapped.findAll({ }, (err, result) => {
-      if (err) return done(err);
-      async.each(result, wrapped.remove.bind(wrapped), done);
     });
+    
+    await wrapped.ensureTable();
   });
 
-  after(function (done) {
-    wrapped.dropTables(done);
+  beforeEach(async function () {
+    await wrapped.create({ hello: 'there' });
+  });
+
+  afterEach(async function () {
+    const items = await wrapped.findAll({ }, true);
+    await Promise.all(items.map(item => wrapped.remove(item)));
+  });
+
+  after(async function () {
+    await wrapped.dropTable();
   });
 
   it('should support the datastar api interface', function () {
-    assume(wrapped.create).is.a('function');
-    assume(wrapped.remove).is.a('function');
-    assume(wrapped.update).is.a('function');
-    assume(wrapped.findOne).is.a('function');
+    assume(wrapped.create).is.an('asyncfunction');
+    assume(wrapped.remove).is.an('asyncfunction');
+    assume(wrapped.update).is.an('asyncfunction');
+    assume(wrapped.findOne).is.an('asyncfunction');
     assume(wrapped.findAll).is.a('function');
-    assume(wrapped.get).is.a('function');
-    assume(wrapped.ensureTables).is.a('function');
-    assume(wrapped.dropTables).is.a('function');
+    assume(wrapped.ensureTable).is.a('function');
+    assume(wrapped.dropTable).is.a('function');
   });
 
-  it('should call scan when no parameters are passed to findAll', function (done) {
+  it('should call scan when no parameters are passed to findAll', async function () {
     sinon.spy(model, 'scan');
 
-    wrapped.findAll({}, (err, res) => {
-      assume(err).is.falsey();
-      assume(model.scan).is.called(1);
-      assume(res).length(1);
-      done();
-    });
+    const items = [];
+    for await (const item of wrapped.findAll({})) {
+      items.push(item);
+    }
+    
+    assume(model.scan).is.called(1);
+    assume(items).length(1);
   });
 
-  it('should call query when hashKey is passed to findAll', function (done) {
+  it('should call query when hashKey is passed to findAll', async function () {
     sinon.spy(model, 'query');
 
+    const items = [];
     wrapped.findAll({ hello: 'there' }, (err, res) => {
       assume(err).is.falsey();
       assume(model.query).is.called(1);
@@ -112,15 +112,14 @@ describe('Dynastar - index.js', function () {
     });
   });
 
-  it('should be optional to pass parameter to findAll for scan', function (done) {
+  it('should be optional to pass parameter to findAll for scan', async function () {
     const stream = wrapped.findAll();
 
-    stream.on('data', function (data) {
-      assume(data.hello).equals('there');
-    }).on('end', done);
+    const { value } = await stream.next();
+    assume(value.hello).equals('there');
   });
 
-  it('should catch table not found errors in findAll', function (done) {
+  it('should catch table not found errors in findAll', async function () {
     const myHashKey = 'hello';
     const myModel = dynamo.define('badTable', {
       hashKey,
@@ -136,15 +135,17 @@ describe('Dynastar - index.js', function () {
       hashKey: myHashKey
     });
 
-    myWrapped.findAll({
-      hello: 'world'
-    }, (error) => {
-      assume(error).is.truthy();
-      done();
-    });
+    let error;
+    try {
+      await myWrapped.findAll({ hello: 'world' }, true);
+    } catch (err) {
+      error = err;
+    }
+
+    assume(error).exists();
   });
 
-  it('should emit table not found errors with streams in findAll', function (done) {
+  it('should emit table not found errors with streams in findAll', async function () {
     const myHashKey = 'hello';
     const myModel = dynamo.define('badTable', {
       hashKey,
@@ -164,56 +165,52 @@ describe('Dynastar - index.js', function () {
       hello: 'world'
     });
 
-    stream
-      .on('data', function () {
-        done(new Error('Unexpected received data instead of error.'));
-      })
-      .on('error', function (error) {
-        assume(error).is.truthy();
-      })
-      .on('close', done);
+    let error;
+    try {
+      for await (const item of stream) { }
+    } catch (err) {
+      error = err;
+    }
+
+    assume(error).exists();
   });
 
-  it('should work with get with hash and rangeKey', function (done) {
+  it('should work with get with hash and rangeKey', async function () {
     const spec = { hello: 'what', what: id };
-    wrapped.create(spec, (err) => {
-      assume(err).is.falsey();
-      wrapped.get(spec, (getErr, res) => {
-        assume(getErr).is.falsey();
-        assume(spec).eql(res);
-        wrapped.remove(spec, done);
-      });
-    });
+    await wrapped.create(spec);
+    
+    try {
+      const res = await wrapped.findOne(spec);
+      assume(spec).eql(res);  
+    } finally {
+      await wrapped.remove(spec);
+    }
   });
 
-  it('should work with update', function (done) {
+  it('should work with update', async function () {
     const spec = { hello: 'what', what: id };
-    wrapped.create(spec, (err) => {
-      assume(err).is.falsey();
-      wrapped.get(spec, (getErr, res) => {
-        assume(getErr).is.falsey();
-        assume(spec).eql(res);
-        wrapped.update({ ...spec, another: 'key' }, (updateErr) => {
-          assume(updateErr).is.falsey();
-          wrapped.findOne(spec, (findErr, findRes) => {
-            assume(findErr).is.falsey();
-            assume(findRes.another).equals('key');
-            wrapped.remove(spec, done);
-          });
-        });
-      });
-    });
-  });
+    await wrapped.create(spec);
 
+    try {
+      const res = await wrapped.findOne(spec);
+      assume(spec).eql(res);
+  
+      await wrapped.update({ ...spec, another: 'key' });
+      
+      const findRes = await wrapped.findOne(spec);
+      assume(findRes.another).equals('key');        
+    } finally {
+      await wrapped.remove(spec);
+    }
+  });
+  
   describe('ensureTables', function () {
-    it('can ensure tables multiple times without error', function (done) {
-      wrapped.ensureTables(function (error) {
-        assume(error).is.falsey();
-        wrapped.ensureTables(done);
-      });
+    it('can ensure tables multiple times without error', async function () {
+      await wrapped.ensureTable();
+      await wrapped.ensureTable();
     });
 
-    it('yields an error when table cannot be created', function (done) {
+    it('yields an error when table cannot be created', async function () {
       // Invalid table name (too short and invalid characters)
       const myModel = dynamo.define('🛑🛑', {
         hashKey,
@@ -230,12 +227,17 @@ describe('Dynastar - index.js', function () {
         }]
       });
       const myWrapped = new Dynastar({ model: myModel, hashKey, rangeKey });
-      myWrapped.ensureTables(function (error) {
-        assume(error).to.exist();
-        assume(error.message).to.include('Invalid table/index name');
-        assume(error.code).to.equal('ValidationException');
-        done();
-      });
+      
+      let error;
+      try {
+        await myWrapped.ensureTable();
+      } catch (err) {
+        error = err;
+      }
+      
+      assume(error).to.exist();
+      assume(error.message).to.include('Invalid table/index name');
+      assume(error.code).to.equal('ValidationException');
     });
   });
 
@@ -258,69 +260,61 @@ describe('Dynastar - index.js', function () {
       });
     });
 
-    afterEach(function (done) {
+    afterEach(async function () {
       if (myWrapped) {
-        return void myWrapped.dropTables(done);
+        await myWrapped.dropTable();
       }
-
-      done();
     });
 
-    it('supports createKey for building the hash key', function (done) {
+    it('supports createKey for building the hash key', async function () {
       const spec = { hello: 'world', what: 'thing' };
       myWrapped = new Dynastar({
         model: myModel,
         hashKey: myHashKey,
         rangeKey: myRangeKey,
-        createKey: ({ hello, what }) => `${hello}!${what}`
+        createHashKey: ({ hello, what }) => `${hello}!${what}`
       });
 
-      myWrapped.ensureTables(() => {
-        myWrapped.create(spec, (err) => {
-          assume(err).is.falsey();
-          myWrapped.findAllQuery(myWrapped.model.query('world!thing'),  (getErr, res) => {
-            assume(getErr).is.falsey();
-            assume(res).length(1);
+      await myWrapped.ensureTable();
+      await myWrapped.create(spec);
+      
+      const res = await myWrapped.findAll(spec, true);
+      assume(res).length(1);
 
-            const [result] = res;
-            assume(result.key).equals('world!thing');
-            assume(result.hello).equals('world');
-            assume(result.what).equals('thing');
-            myWrapped.remove(spec, done);
-          });
-        });
-      });
+      const [result] = res;
+      assume(result.key).equals('world!thing');
+      assume(result.hello).equals('world');
+      assume(result.what).equals('thing');
+      await myWrapped.remove(spec);
     });
 
-    it('supports createHashKey which overrides createKey for building the hash key', function (done) {
+    it('supports createHashKey which overrides createKey for building the hash key', async function () {
       const spec = { hello: 'world', what: 'thing' };
       myWrapped = new Dynastar({
         model: myModel,
         hashKey: myHashKey,
         rangeKey: myRangeKey,
-        createHashKey: ({ hello, what }) => `${hello}!${what}`,
-        // overrides createKey
-        createKey: ({ hello, what }) => `${what}!${hello}`
+        createHashKey: ({ hello, what }) => `${hello}!${what}`
       });
 
-      myWrapped.ensureTables(() => {
-        myWrapped.create(spec, (err) => {
-          assume(err).is.falsey();
-          myWrapped.findAllQuery(myWrapped.model.query('world!thing'),  (getErr, res) => {
-            assume(getErr).is.falsey();
-            assume(res).length(1);
+      await myWrapped.ensureTable();
 
-            const [result] = res;
-            assume(result.key).equals('world!thing');
-            assume(result.hello).equals('world');
-            assume(result.what).equals('thing');
-            myWrapped.remove(spec, done);
-          });
-        });
-      });
+      await myWrapped.create(spec);
+
+      try {
+        const res = await myWrapped.findAll(spec, true);
+        assume(res).length(1);
+  
+        const [result] = res;
+        assume(result.key).equals('world!thing');
+        assume(result.hello).equals('world');
+        assume(result.what).equals('thing');  
+      } finally {
+        await myWrapped.remove(spec);
+      }
     });
 
-    it('supports createRangeKey for building the range key', function (done) {
+    it('supports createRangeKey for building the range key', async function () {
       const spec = { key: 'findMe', hello: 'world', other: 'something' };
       myWrapped = new Dynastar({
         model: myModel,
@@ -329,85 +323,69 @@ describe('Dynastar - index.js', function () {
         createRangeKey: ({ hello, other }) => `${hello}!${other}`
       });
 
-      myWrapped.ensureTables(() => {
-        myWrapped.create(spec, (err) => {
-          assume(err).is.falsey();
-          myWrapped.findAllQuery(myWrapped.model.query('findMe'),  (getErr, res) => {
-            assume(getErr).is.falsey();
-            assume(res).length(1);
+      await myWrapped.ensureTable();
 
-            const [result] = res;
-            assume(result.what).equals('world!something');
-            myWrapped.remove(spec, done);
-          });
-        });
-      });
+      await myWrapped.create(spec);
+
+      const res = await myWrapped.findAll(spec, true);
+      assume(res).length(1);
+
+      const [result] = res;
+      assume(result.what).equals('world!something');
+      await myWrapped.remove(spec);
     });
   });
 
   describe('options', function () {
-    it('should be allowed on create', function (done) {
+    it('should be allowed on create', async function () {
       const spec = { hello: 'what', what: id };
-      wrapped.create(spec, { overwrite: false }, function (initialError) {
-        assume(initialError).to.be.falsey();
+      await wrapped.create(spec, { overwrite: false });
+      
+      let err;
+      try {
+        await wrapped.create(spec, { overwrite: false });
+      } catch (error) {
+        err = error;
+      }
 
-        wrapped.create(spec, { overwrite: false }, function (err) {
-          assume(err).is.truthy();
-          assume(err.message).to.equal('The conditional request failed');
-          done();
-        });
-      });
+      assume(err).is.truthy();
+      assume(err.message).to.equal('The conditional request failed');
     });
 
-    it('should be allowed on update', function (done) {
+    it('should be allowed on update', async function () {
       const originalSpec = { hello: 'what', what: id, another: 'foo' };
       const updatedSpec = { ...originalSpec, another: 'bar' };
 
-      wrapped.create(originalSpec, function (initialError) {
-        assume(initialError).to.be.falsey();
+      await wrapped.create(originalSpec);
+      const res = await wrapped.update(updatedSpec, { ReturnValues: 'ALL_OLD', expected: { another: 'foo' } });
 
-        wrapped.update(updatedSpec, { ReturnValues: 'ALL_OLD', expected: { another: 'foo' } }, function (err, res) {
-          assume(err).is.falsey();
-          assume(res).is.truthy();
-          assume(res.toJSON().another).to.equal('foo');
-          done();
-        });
-      });
+      assume(res).is.truthy();
+      assume(res.another).to.equal('foo');
     });
 
-    it('should be allowed on remove', function (done) {
+    it('should be allowed on remove', async function () {
       const spec = { hello: 'what', what: id };
 
-      wrapped.create({ ...spec, another: 'foo' }, function (initialError) {
-        assume(initialError).to.be.falsey();
-
-        wrapped.remove(spec, { expected: { another: 'foo' } }, function (err) {
-          assume(err).is.falsey();
-          done();
-        });
-      });
+      await wrapped.create({ ...spec, another: 'foo' });
+      await wrapped.remove(spec, { expected: { another: 'foo' } });
     });
 
-    it('should be allowed on get', function (done) {
+    it('should be allowed on findOne', async function () {
       const spec = { hello: 'what', what: id, another: 'foo' };
 
-      wrapped.create(spec, function (initialError) {
-        assume(initialError).to.be.falsey();
+      await wrapped.create(spec);
 
-        wrapped.get(spec, { ConsistentRead: true, AttributesToGet: ['hello', 'another'] }, function (err, res) {
-          assume(err).is.falsey();
-          assume(res).is.truthy();
-          assume(res).has.property('hello', 'what');
-          assume(res).has.property('another', 'foo');
-          assume(res).to.not.have.property('what');
-          done();
-        });
-      });
+      const res = await wrapped.findOne(spec, { ConsistentRead: true, AttributesToGet: ['hello', 'another'] });
+
+      assume(res).is.truthy();
+      assume(res).has.property('hello', 'what');
+      assume(res).has.property('another', 'foo');
+      assume(res).to.not.have.property('what');
     });
   });
 
   describe('Global Table attributes', function () {
-    it('should strip out global table attributes on create', function (done) {
+    it('should strip out global table attributes on create', async function () {
       const spec = {
         'hello': 'what',
         'what': id,
@@ -415,107 +393,47 @@ describe('Dynastar - index.js', function () {
         'aws:rep:updatetime': 'some-update-time value',
         'aws:rep:updateregion': 'some-update-region value'
       };
+
       const expected = {
         hello: spec.hello,
         what: spec.what
       };
 
-      wrapped.create(spec, (err) => {
-        assume(err).is.falsey();
-        wrapped.get(spec, (getErr, res) => {
-          assume(getErr).is.falsey();
-          assume(res).eql(expected);
-
-          assume(spec).to.have.property('aws:rep:deleting');
-          assume(spec).to.have.property('aws:rep:updatetime');
-          assume(spec).to.have.property('aws:rep:updateregion');
-          wrapped.remove(res, done);
-        });
-      });
+      await wrapped.create(spec);
+      
+      const res = await wrapped.findOne(spec);
+      
+      assume(res).eql(expected);
+      assume(res).not.to.have.property('aws:rep:deleting');
+      assume(res).not.to.have.property('aws:rep:updatetime');
+      assume(res).not.to.have.property('aws:rep:updateregion');
     });
 
-    it('should strip out global table attributes on update', function (done) {
+    it('should strip out global table attributes on update', async function () {
       const spec = { hello: 'what', what: id };
-      wrapped.create(spec, (err) => {
-        assume(err).is.falsey();
-        wrapped.get(spec, (getErr, res) => {
-          assume(getErr).is.falsey();
-          assume(spec).eql(res);
-          const updatedSpec = {
-            ...spec,
-            'another': 'key',
-            'aws:rep:deleting': 'some-deleting value',
-            'aws:rep:updatetime': 'some-update-time value',
-            'aws:rep:updateregion': 'some-update-region value'
-          };
-          wrapped.update(updatedSpec, (updateErr) => {
-            assume(updateErr).is.falsey();
-            wrapped.findOne(spec, (findErr, findRes) => {
-              assume(findErr).is.falsey();
-              assume(findRes.another).equals('key');
-              assume(updatedSpec).to.have.property('aws:rep:deleting');
-              assume(updatedSpec).to.have.property('aws:rep:updatetime');
-              assume(updatedSpec).to.have.property('aws:rep:updateregion');
-              wrapped.remove(spec, done);
-            });
-          });
-        });
-      });
-    });
-  });
-
-  describe('hoistable functions', function () {
-    it('should work with defined hoistable function', function (done) {
-      function modify(obj) {
-        obj.anotherKey = 'what';
-        return obj;
+      await wrapped.create(spec);
+      
+      try {
+        const res = await wrapped.findOne(spec);
+        assume(spec).eql(res);
+        
+        const updatedSpec = {
+          ...spec,
+          'another': 'key',
+          'aws:rep:deleting': 'some-deleting value',
+          'aws:rep:updatetime': 'some-update-time value',
+          'aws:rep:updateregion': 'some-update-region value'
+        };
+        await wrapped.update(updatedSpec);
+  
+        const findRes = await wrapped.findOne(spec);
+        assume(findRes.another).equals('key');
+        assume(updatedSpec).to.have.property('aws:rep:deleting');
+        assume(updatedSpec).to.have.property('aws:rep:updatetime');
+        assume(updatedSpec).to.have.property('aws:rep:updateregion');  
+      } finally {
+        await wrapped.remove(spec);
       }
-
-      const wmodel = new Dynastar({ model, hashKey, rangeKey, modify });
-      assume(wmodel.modify).is.a('function');
-      wmodel.findAll()
-        .on('data', function (data) {
-          const modified = wmodel.modify(data);
-          assume(modified.anotherKey).equals('what');
-        })
-        .on('error', done)
-        .on('end', done);
-    });
-
-    it('should hoist function with AwaitWrap and make them awaitable', async function () {
-      function somethingAsync(data, done) {
-        data.somethingAsync = true;
-        return void setImmediate(done, null, data);
-      }
-      const wmodel = new AwaitWrap(new Dynastar({ model, hashKey, rangeKey, somethingAsync }));
-      const results = await wmodel.findAll({ hello: 'there' });
-      for (const res of results) {
-        const modified = await wmodel.somethingAsync(res);
-        assume(modified.somethingAsync).is.true();
-      }
-    });
-
-    it('should allow query by index', function (done) {
-      const wmodel = new Dynastar({ model, hashKey, rangeKey, findByIndex });
-      assume(wmodel.findByIndex).is.a('function');
-
-      wmodel.create({ hello: 'bob', another: 'foo' }, (error) => {
-        if (error) return done(error);
-
-        wmodel.create({ hello: 'cruel world', another: 'foo' }, (error2) => {
-          if (error2) return done(error2);
-
-          wmodel.findByIndex({ another: 'foo' }, (findError, results) => {
-            if (findError) return done(findError);
-
-            assume(results).to.have.length(2);
-            const hellos = results.map(r => r.hello);
-            assume(hellos).contains('bob');
-            assume(hellos).contains('cruel world');
-            done();
-          });
-        });
-      });
     });
   });
 });

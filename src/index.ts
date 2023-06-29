@@ -1,6 +1,5 @@
 ///<reference types="../src/extensions.d.ts"/>
 
-import { Readable } from 'node:stream'
 import { omit } from 'lodash';
 import type { CreateOptions, DestroyOptions, GetOptions, Model, UpdateOptions } from 'dynamodb';
 
@@ -178,7 +177,7 @@ class Dynastar<T, HashKey extends keyof T, RangeKey extends keyof T | never = ne
 }
 
 async function collect<T>(iterable: AsyncIterable<T>): Promise<Array<T>> {
-  const result = [];
+  const result: Array<T> = [];
   for await (const item of iterable) {
     result.push(item);
   }

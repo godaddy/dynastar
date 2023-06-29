@@ -1,7 +1,36 @@
 // Temporary until the maintainers of `@types/dynamodb` fix their declaration
-// TODO: put pull request here
+// https://github.com/DefinitelyTyped/DefinitelyTyped/pull/65933
+
+import type { Readable } from 'node:stream';
+import type { DynamoDB } from 'aws-sdk';
+import type { ArraySchema, AnySchema, StringSchema, SchemaMap } from 'joi';
+import type EventEmitter from 'node:events';
 
 declare module 'dynamodb' {
+  export interface DefineConfig<T> {
+    hashKey: string;
+    rangeKey?: string;
+    timestamps?: boolean;
+    createdAt?: boolean | string;
+    updatedAt?: boolean | string;
+    tableName?: string | (() => string);
+    indexes?: ReadonlyArray<IndexDefinition<T>>;
+    schema?: SchemaMap<T, true>;
+  }
+
+  interface IndexDefinition<T> {
+    hashKey: keyof T;
+    rangeKey?: keyof T;
+    name: string;
+    type: 'local' | 'global';
+    projection?: Projection<T>;
+  }
+  
+  interface Projection<T> {
+    ProjectionType?: 'ALL' | 'KEYS_ONLY' | 'INCLUDE' | string;
+    NonKeyAttributes?: Array<keyof T>;
+  }
+
   export class Item<T> extends EventEmitter {
     constructor(attrs: T, table: any);
     attrs: T;
@@ -9,52 +38,52 @@ declare module 'dynamodb' {
     set(attributes: Partial<T>): this;
     save(callback: Callback<T>): void;
     save(): Promise<T>;
-    update(options: Model.UpdateOptions<T>, callback: Callback<Item<T>>): void;
+    update(options: UpdateOptions<T>, callback: Callback<Item<T>>): void;
     update(callback: Callback<Item<T>>): void;
-    update(options?: Model.UpdateOptions<T>): Promise<Item<T>>;
-    destroy(options: Model.DestroyOptions<T>, callback: Callback<Item<T>>): void;
+    update(options?: UpdateOptions<T>): Promise<Item<T>>;
+    destroy(options: DestroyOptions<T>, callback: Callback<Item<T>>): void;
     destroy(callback: Callback<Item<T>>): void;
-    destroy(options?: Model.DestroyOptions<T>): Promise<Item<T>>;
+    destroy(options?: DestroyOptions<T>): Promise<Item<T>>;
     toJSON(): T;
   }
 
   export interface Model<T> {
     new(attrs: T): Item<T>;
     
-    get(hashKey: string, rangeKey: string, options: Model.GetOptions<T>, callback: Callback<Item<T> | null>): void;
+    get(hashKey: string, rangeKey: string, options: GetOptions<T>, callback: Callback<Item<T> | null>): void;
     get(hashKey: string, rangeKey: string, callback: Callback<Item<T> | null>): void;
-    get(hashKey: string, options: Model.GetOptions<T>, callback: Callback<Item<T> | null>): void;
+    get(hashKey: string, options: GetOptions<T>, callback: Callback<Item<T> | null>): void;
     get(hashKey: string, callback: Callback<Item<T> | null>): void;
-    get(attributes: Partial<T>, options: Model.GetOptions<T>, callback: Callback<Item<T> | null>): void;
+    get(attributes: Partial<T>, options: GetOptions<T>, callback: Callback<Item<T> | null>): void;
     get(attributes: Partial<T>, callback: Callback<Item<T> | null>): void;
-    get(hashKey: string, rangeKey?: string, options?: Model.GetOptions<T>): Promise<Item<T> | null>;
-    get(hashKey: string, options?: Model.GetOptions<T>): Promise<Item<T> | null>;
-    get(attributes: Partial<T>, options?: Model.GetOptions<T>): Promise<Item<T> | null>;
+    get(hashKey: string, rangeKey?: string, options?: GetOptions<T>): Promise<Item<T> | null>;
+    get(hashKey: string, options?: GetOptions<T>): Promise<Item<T> | null>;
+    get(attributes: Partial<T>, options?: GetOptions<T>): Promise<Item<T> | null>;
     
-    update(attributes: Partial<T>, options: Model.UpdateOptions<T>, callback: Callback<Item<T>>): void;
+    update(attributes: Partial<T>, options: UpdateOptions<T>, callback: Callback<Item<T>>): void;
     update(attributes: Partial<T>, callback: Callback<Item<T>>): void;
-    update(attributes: Partial<T>, options?: Model.UpdateOptions<T>): Promise<Item<T>>;
+    update(attributes: Partial<T>, options?: UpdateOptions<T>): Promise<Item<T>>;
 
-    create(attributes: Partial<T>, options: Model.CreateOptions, callback: Callback<Item<T>>): void;
+    create(attributes: Partial<T>, options: CreateOptions, callback: Callback<Item<T>>): void;
     create(attributes: Partial<T>, callback: Callback<Item<T>>): void;
-    create(attributes: Partial<T>, options?: Model.CreateOptions): Promise<Item<T>>;
-    create(attributes: ReadonlyArray<Partial<T>>, options: Model.CreateOptions, callback: Callback<Array<Item<T>>>): void;
+    create(attributes: Partial<T>, options?: CreateOptions): Promise<Item<T>>;
+    create(attributes: ReadonlyArray<Partial<T>>, options: CreateOptions, callback: Callback<Array<Item<T>>>): void;
     create(attributes: ReadonlyArray<Partial<T>>, callback: Callback<Array<Item<T>>>): void;
-    create(attributes: ReadonlyArray<Partial<T>>, options?: Model.CreateOptions): Promise<Array<Item<T>>>;
+    create(attributes: ReadonlyArray<Partial<T>>, options?: CreateOptions): Promise<Array<Item<T>>>;
 
-    destroy(hashKey: string, rangeKey: string, options: Model.DestroyOptions<T>, callback: Callback<any>): void;
+    destroy(hashKey: string, rangeKey: string, options: DestroyOptions<T>, callback: Callback<any>): void;
     destroy(hashKey: string, rangeKey: string, callback: Callback<any>): void;
-    destroy(hashKey: string, options: Model.DestroyOptions<T>, callback: Callback<any>): void;
+    destroy(hashKey: string, options: DestroyOptions<T>, callback: Callback<any>): void;
     destroy(hashKey: string, callback: Callback<any>): void;
-    destroy(attributes: Partial<T>, options: Model.DestroyOptions<T>, callback: Callback<any>): void;
+    destroy(attributes: Partial<T>, options: DestroyOptions<T>, callback: Callback<any>): void;
     destroy(attributes: Partial<T>, callback: Callback<any>): void;
-    destroy(hashKey: string, rangeKey?: string, options?: Model.DestroyOptions<T>): Promise<any>;
-    destroy(hashKey: string, options?: Model.DestroyOptions<T>): Promise<any>;
-    destroy(attributes: Partial<T>, options?: Model.DestroyOptions<T>): Promise<any>;
+    destroy(hashKey: string, rangeKey?: string, options?: DestroyOptions<T>): Promise<any>;
+    destroy(hashKey: string, options?: DestroyOptions<T>): Promise<any>;
+    destroy(attributes: Partial<T>, options?: DestroyOptions<T>): Promise<any>;
     
-    getItems(keys: ReadonlyArray<Partial<T> | string>, options: Model.GetOptions<T>, callback: Callback<Array<Item<T>>>): void;
+    getItems(keys: ReadonlyArray<Partial<T> | string>, options: GetOptions<T>, callback: Callback<Array<Item<T>>>): void;
     getItems(keys: ReadonlyArray<Partial<T> | string>, callback: Callback<Array<Item<T>>>): void;
-    getItems(keys: ReadonlyArray<Partial<T> | string>, options?: Model.GetOptions<T>): Promise<Array<Item<T>>>;
+    getItems(keys: ReadonlyArray<Partial<T> | string>, options?: GetOptions<T>): Promise<Array<Item<T>>>;
 
     query(hashKey: string): Query<T>;
     scan(): Scan<T>;
@@ -71,15 +100,14 @@ declare module 'dynamodb' {
     config(config: { dynamodb?: DynamoDB; tableName?: string }): any;
   }
 
-
   export interface WriteOptions {
     ReturnValues?: string | boolean;
   }
 
   export interface ConditionalOptions<T> {
-    ConditionExpression?: any;
-    ExpressionAttributeValues?: any;
-    ExpressionAttributeNames?: any;
+    ConditionExpression?: string;
+    ExpressionAttributeValues?: Record<string, any>;
+    ExpressionAttributeNames?: Record<string, string>;
     expected?: Partial<T>;
   }
 
@@ -88,7 +116,7 @@ declare module 'dynamodb' {
   }
 
   export interface UpdateOptions<T> extends ConditionalOptions<T>, WriteOptions {
-    UpdateExpression?: any;
+    UpdateExpression?: string;
     ReturnValues?: string | boolean;
   }
 
@@ -204,4 +232,14 @@ declare module 'dynamodb' {
   export function define<T = any>(name: string, config: DefineConfig<T>): Model<T>;
 
   export type Callback<T> = (err: any, result: T) => void;
+
+  export interface PromisedReadable<T> extends Readable {
+    // DevNote: Promise function in dynamodb wraps results in an array
+    promise(): Promise<T[]>;
+  }
+
+  export interface ExecuteFilter<T> {
+    (callback: Callback<T>): void;
+    (): PromisedReadable<T>;
+  }
 }

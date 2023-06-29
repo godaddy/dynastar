@@ -1,5 +1,20 @@
 # CHANGELOG
 
+### 3.0.0
+
+- (breaking) All methods now return `Promises` or `AsyncIterables`
+- (breaking) `AwaitWrap` is no-longer provided
+- (breaking) Support for node versions under 16 is not guaranteed
+- (breaking) The `hashKey` config option is now required
+- (breaking) Remove support for adding extension methods
+- (breaking) Remove `createKey` config option; use `createHashKey` instead
+- (breaking) Rename `ensureTables` to `ensureTable`
+- (breaking) Rename `dropTables` to `dropTable`
+- (breaking) Remove `get` (use `findOne` instead)
+- (feature) TypeScript types are provided
+
+See the [migration guide](./README.md#from-2-to-3) for more information.
+
 ### 2.0.0
 
 - [#8] Bump to `dynamodb-x@2.0.0`

@@ -203,7 +203,7 @@ class Dynastar {
    */
   _computeKeyOpts(data) {
     const ret = this._createKey
-      ? { key: this._createKey(data) }
+      ? { [this.hashKey]: this._createKey(data) }
       : { [this.hashKey]: data[this.hashKey] };
 
     if (this.rangeKey) {

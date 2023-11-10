@@ -243,14 +243,14 @@ describe('Dynastar - index.js', function () {
     let myModel, myHashKey, myRangeKey, myWrapped;
 
     before(function () {
-      myHashKey = 'key';
+      myHashKey = 'hey';
       myRangeKey = 'what';
 
       myModel = dynamo.define('test2', {
         hashKey: myHashKey,
         rangeKey: myRangeKey,
         schema: {
-          key: Joi.string(),
+          hey: Joi.string(),
           hello: Joi.string(),
           what: Joi.string(),
           other: Joi.string().allow(null)
@@ -283,7 +283,7 @@ describe('Dynastar - index.js', function () {
             assume(res).length(1);
 
             const [result] = res;
-            assume(result.key).equals('world!thing');
+            assume(result.hey).equals('world!thing');
             assume(result.hello).equals('world');
             assume(result.what).equals('thing');
             myWrapped.remove(spec, done);
@@ -311,7 +311,7 @@ describe('Dynastar - index.js', function () {
             assume(res).length(1);
 
             const [result] = res;
-            assume(result.key).equals('world!thing');
+            assume(result.hey).equals('world!thing');
             assume(result.hello).equals('world');
             assume(result.what).equals('thing');
             myWrapped.remove(spec, done);
@@ -321,7 +321,7 @@ describe('Dynastar - index.js', function () {
     });
 
     it('supports createRangeKey for building the range key', function (done) {
-      const spec = { key: 'findMe', hello: 'world', other: 'something' };
+      const spec = { hey: 'findMe', hello: 'world', other: 'something' };
       myWrapped = new Dynastar({
         model: myModel,
         hashKey: myHashKey,

@@ -181,7 +181,7 @@ class Dynastar {
   ensureTables(...args) {
     const [cb] = args.splice(args.length - 1, 1);
     return this.model.createTable(...args, function (err, data) {
-      if (err && err.code === 'ResourceInUseException' && err.message === 'Table already created') {
+      if (err && err.code === 'ResourceInUseException' && err.message.includes('Table already')) {
         return void cb(null, data);
       }
       cb(err, data);

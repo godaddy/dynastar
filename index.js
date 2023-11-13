@@ -202,9 +202,9 @@ class Dynastar {
    * @returns {Object} parameters for hashKey and/or rangeKey
    */
   _computeKeyOpts(data) {
-    const ret = this._createKey
-      ? { key: this._createKey(data) }
-      : { [this.hashKey]: data[this.hashKey] };
+    const ret = {
+      [this.hashKey]: this._createKey ? this._createKey(data) : data[this.hashKey]
+    };
 
     if (this.rangeKey) {
       if (this._createRangeKey) {

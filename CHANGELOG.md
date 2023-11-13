@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### 2.0.1
+
+- Support key builder for hash key values other than "key"
+
 ### 2.0.0
 
 - [#8] Bump to `dynamodb-x@2.0.0`
